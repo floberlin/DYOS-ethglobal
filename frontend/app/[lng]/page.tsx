@@ -66,119 +66,128 @@ function Page() {
   }, [wallet, selectedChain]);
 
   return (
-    <main>
-      <div className="navbar bg-base-100">
-        <div className="navbar-start">
-          <div className="dropdown"></div>
-          <Image src="/icons/logo.png" alt="Logo" width={120} height={40} />
+    <main className="flex flex-col min-h-screen">
+      <div className="flex-grow">
+        <div className="navbar bg-base-100">
+          <div className="navbar-start">
+            <div className="dropdown"></div>
+            <img src="/icons/logo.png" alt="Logo" width={120} height={40} />
+          </div>
+          <div className="navbar-center hidden lg:flex"></div>
+          <div className="navbar-end">
+            <button className="btn" onClick={connectWallet}>
+              {wallet?.address
+                ? wallet?.address.slice(0, 4) +
+                  "..." +
+                  wallet?.address.slice(-3)
+                : "Connect Wallet"}
+            </button>
+          </div>
         </div>
-        <div className="navbar-center hidden lg:flex"></div>
-        <div className="navbar-end">
-          <button className="btn" onClick={connectWallet}>
-            {wallet?.address
-              ? wallet?.address.slice(0, 4) + "..." + wallet?.address.slice(-3)
-              : "Connect Wallet"}
-          </button>
-        </div>
-      </div>
-      {/* Main  */}
-      <div className="container mx-auto p-4">
-        <h2 className="text-2xl font-bold mb-4">Why Self-Sequence?</h2>
-        <p>Self-sequencing may be necessary if:</p>
-        <ul className="list-disc list-inside">
-          <li>The sequencer is down or censoring your transaction.</li>
-          <li>
-            You want to avoid potential MEV (Miner Extractable Value) extraction
-            by the sequencer.
-          </li>
-          <li>
-            You need stronger guarantees about the inclusion of your transaction
-            in a specific order.
-          </li>
-        </ul>
-        <p className="mt-4">
-          Note: self-sequencing is expensive because you will have to pay the
-          full gas cost of submitting your transaction directly to Ethereum L1.
-        </p>
-        <br />
-        <div className="text-left">
-          <h2 className="text-2xl font-bold mb-2">Choose your L2</h2>
+        {/* Main content */}
+        <div className="container mx-auto p-4">
+          <h2 className="text-2xl font-bold mb-4">Why Self-Sequence?</h2>
+          <p>Self-sequencing may be necessary if:</p>
+          <ul className="list-disc list-inside">
+            <li>The sequencer is down or censoring your transaction.</li>
+            <li>
+              You want to avoid potential MEV (Miner Extractable Value)
+              extraction by the sequencer.
+            </li>
+            <li>
+              You need stronger guarantees about the inclusion of your
+              transaction in a specific order.
+            </li>
+          </ul>
+          <p className="mt-4">
+            Note: self-sequencing is expensive because you will have to pay the
+            full gas cost of submitting your transaction directly to Ethereum
+            L1.
+          </p>
+          <br />
+          <div className="text-left">
+            <h2 className="text-2xl font-bold mb-2">Choose your L2</h2>
 
-          <h3 className="text-xl font-bold mb-2">Testnet:</h3>
-          <button
-            className="btn btn-primary mr-2"
-            onClick={() => handleChainSelection(worldchainSepolia)}
-          >
-            World Sepolia
-          </button>
-          <button
-            className="btn btn-primary mr-2"
-            onClick={() => handleChainSelection(baseSepolia)}
-          >
-            Base Sepolia
-          </button>
-          <button
-            className="btn btn-primary mr-2"
-            onClick={() => handleChainSelection(optimismSepolia)}
-          >
-            Optimism Sepolia
-          </button>
-          <button
-            className="btn btn-primary "
-            onClick={() => handleChainSelection(localhost)}
-          >
-            Localhost
-          </button>
-        </div>
-        <div className="text-left mt-4">
-          <h3 className="text-xl font-bold mb-2">Mainnet:</h3>
-          <button
-            className="btn btn-primary mr-2"
-            onClick={() => handleChainSelection(worldchain)}
-          >
-            World
-          </button>
-          <button
-            className="btn btn-primary mr-2"
-            onClick={() => handleChainSelection(base)}
-          >
-            Base
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => handleChainSelection(optimism)}
-          >
-            Optimism
-          </button>
-        </div>
-        <br />
-        <p>Connected Chain: {selectedChain?.name}</p>
-        <div
-          tabIndex={0}
-          className="collapse collapse-arrow border-base-300 bg-base-200 border"
-        >
-          <div className="collapse-title text-xl font-medium">
-            Focus me to see content
+            <h3 className="text-xl font-bold mb-2">Testnet:</h3>
+            <button
+              className="btn btn-primary mr-2"
+              onClick={() => handleChainSelection("worldchainSepolia")}
+            >
+              World Sepolia
+            </button>
+            <button
+              className="btn btn-primary mr-2"
+              onClick={() => handleChainSelection("baseSepolia")}
+            >
+              Base Sepolia
+            </button>
+            <button
+              className="btn btn-primary mr-2"
+              onClick={() => handleChainSelection("optimismSepolia")}
+            >
+              Optimism Sepolia
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleChainSelection("localhost")}
+            >
+              Localhost
+            </button>
           </div>
-          <div className="collapse-content">
-            <p>tabindex={0} attribute is necessary to make the div focusable</p>
+          <div className="text-left mt-4">
+            <h3 className="text-xl font-bold mb-2">Mainnet:</h3>
+            <button
+              className="btn btn-primary mr-2"
+              onClick={() => handleChainSelection("worldchain")}
+            >
+              World
+            </button>
+            <button
+              className="btn btn-primary mr-2"
+              onClick={() => handleChainSelection("base")}
+            >
+              Base
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => handleChainSelection("optimism")}
+            >
+              Optimism
+            </button>
           </div>
-        </div>
-        <div
-          tabIndex={0}
-          className="collapse collapse-arrow border-base-300 bg-base-200 border"
-        >
-          <div className="collapse-title text-xl font-medium">
-            Focus me to see content
+          <br />
+          <p>Connected Chain: {selectedChain?.name}</p>
+          <div
+            tabIndex={0}
+            className="collapse collapse-arrow border-base-300 bg-base-200 border"
+          >
+            <div className="collapse-title text-xl font-medium">
+              Focus me to see content
+            </div>
+            <div className="collapse-content">
+              <p>
+                tabindex={0} attribute is necessary to make the div focusable
+              </p>
+            </div>
           </div>
-          <div className="collapse-content">
-            <p>tabindex={0} attribute is necessary to make the div focusable</p>
+          <div
+            tabIndex={0}
+            className="collapse collapse-arrow border-base-300 bg-base-200 border"
+          >
+            <div className="collapse-title text-xl font-medium">
+              Focus me to see content
+            </div>
+            <div className="collapse-content">
+              <p>
+                tabindex={0} attribute is necessary to make the div focusable
+              </p>
+            </div>
           </div>
         </div>
       </div>
       <footer className="footer bg-neutral text-neutral-content items-center p-4">
         <aside className="grid-flow-col items-center">
-          <p>Made with ❤️ at ETHGlobal Bangkok</p>
+          <p>Made with ❤️ at ETHGlobal Bangkok 2024</p>
         </aside>
         <nav className="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
           <a href="https://github.com/floberlin/DYOS-ethglobal" target="_blank">
