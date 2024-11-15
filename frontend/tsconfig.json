@@ -1,0 +1,104 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"lib": [
+			"dom",
+			"dom.iterable",
+			"esnext"
+		],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true,
+		"esModuleInterop": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "preserve",
+		"incremental": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": [
+				"./*"
+			],
+			"@root/*": [
+				"./*"
+			],
+			"@app/*": [
+				"./app/*"
+			],
+			"@api/*": [
+				"./app/api/*"
+			],
+			"@public/*": [
+				"./public/*"
+			],
+			"@utils/*": [
+				"./utils/*"
+			],
+			"@styles/*": [
+				"./styles/*"
+			],
+			"@fonts": [
+				"./utils/fonts/fonts"
+			],
+			"@locales/*": [
+				"./utils/locales/*"
+			],
+			"@functions/*": [
+				"./utils/functions/*"
+			],
+			"@store": [
+				"./utils/store/"
+			],
+			"@types/*": [
+				"./utils/types/*"
+			],
+			"@ui/*": [
+				"./utils/ui/*"
+			],
+			"@modules/*": [
+				"./utils/ui/modules/*"
+			],
+			"@charts/*": [
+				"./utils/ui/modules/charts/*"
+			],
+			"@basics/*": [
+				"./utils/ui/basics/*"
+			],
+			"@elements/*": [
+				"./utils/ui/elements/*"
+			],
+			"@layouts/*": [
+				"./utils/ui/layouts/*"
+			],
+			"@assets/*": [
+				"./utils/ui/assets/*"
+			],
+			"@widgets/*": [
+				"./utils/ui/widgets/*"
+			],
+			"@lib/*": [
+				"./lib/*"
+			],
+			"@modals/*": [
+				"./utils/ui/modals/*"
+			],
+		}
+	},
+	"include": [
+		"next-env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		".next/types/**/*.ts",
+		"i18nConfig.js"
+	],
+	"exclude": [
+		"node_modules"
+	]
+}
