@@ -26,7 +26,13 @@ const {
 
 import { config } from "./providers";
 import portal from "@utils/abis/portal.json";
-import { createPublicClient, defineChain, formatUnits, http } from "viem";
+import {
+  createPublicClient,
+  defineChain,
+  formatUnits,
+  http,
+  parseUnits,
+} from "viem";
 
 const local = /*#__PURE__*/ defineChain({
   id: 3151908,
@@ -54,6 +60,17 @@ const WORLDCHAIN_SEPOLIA_ROLLUP_CONTRACT =
 const ODYSSEY_SEPOLIA_ROLLUP_CONTRACT =
   "0xAA1227dCd7CE7059Fa30d42641f7a7689b652b55";
 
+// Mainnet Contracts
+const WORLD_MAINNET_ROLLUP_CONTRACT =
+  "0xd5ec14a83b7d95be1e2ac12523e2dee12cbeea6c";
+
+const BASE_MAINNET_ROLLUP_CONTRACT =
+  "0x49048044D57e1C92A77f79988d21Fa8fAF74E97e";
+
+const OPTIMISM_MAINNET_ROLLUP_CONTRACT =
+  "0xbEb5Fc579115071764c7423A4f12eDde41f106Ed";
+
+//CrossChainMsg
 const OP_STACK_CROSSCHAIN_CONTRACT =
   "0x4200000000000000000000000000000000000007";
 
@@ -73,6 +90,12 @@ function Page() {
   const [sendTo, setSendTo] = useState();
   const [ethValue, setEthValue] = useState();
 
+  const [chainExplorer, setChainExplorer] = useState("");
+
+  const [chainExplorerL1, setChainExplorerL1] = useState(
+    "https://eth-sepolia.blockscout.com/"
+  );
+
   const handleChainSelection = useCallback(
     async (chain: any) => {
       if (!wallet || !chain) return;
@@ -83,10 +106,12 @@ function Page() {
 
         if (chain.id === worldchain.id) {
           setUsedContractAddress(WORLD_MAINNET_ROLLUP_CONTRACT);
+          setChainExplorer("https://worldchain-mainnet.explorer.alchemy.com/");
+          setChainExplorerL1("https://eth.blockscout.com/");
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
             chain: worldchain,
-            transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+            transport: http("https://worldchain-mainnet.g.alchemy.com/public/"),
           }).extend(publicActionsL2());
           l2PublicClient.getBalance({ address }).then((balance: any) => {
             console.log("Balance", balance);
@@ -96,23 +121,29 @@ function Page() {
           await switchChain(config, { chainId: mainnet.id });
         } else if (chain.id === base.id) {
           setUsedContractAddress(BASE_MAINNET_ROLLUP_CONTRACT);
+          setChainExplorerL1("https://eth.blockscout.com/");
+
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
             chain: base,
-            transport: http("https://base.llamarpc.com"),
+            transport: http("https://base.llamarpc.com/"),
           }).extend(publicActionsL2());
           l2PublicClient.getBalance({ address }).then((balance: any) => {
             console.log("Balance", balance);
             setL2Balance(formatUnits(balance, 18));
           });
           setL2PublicClient(l2PublicClient);
+          setChainExplorer("https://base.blockscout.com/");
           await switchChain(config, { chainId: mainnet.id });
         } else if (chain.id === optimism.id) {
+          setChainExplorer("https://optimism.blockscout.com/");
+          setChainExplorerL1("https://eth.blockscout.com/");
+
           setUsedContractAddress(OPTIMISM_MAINNET_ROLLUP_CONTRACT);
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
-            chain: optimismSepolia,
-            transport: http("https://sepolia.optimism.io"),
+            chain: optimism,
+            transport: http("https://mainnet.optimism.io"),
           }).extend(publicActionsL2());
           l2PublicClient.getBalance({ address }).then((balance: any) => {
             console.log("Balance", balance);
@@ -121,11 +152,14 @@ function Page() {
           setL2PublicClient(l2PublicClient);
           await switchChain(config, { chainId: mainnet.id });
         } else if (chain.id === worldchainSepolia.id) {
+          setChainExplorer("https://worldchain-sepolia.explorer.alchemy.com/");
+          setChainExplorerL1("https://eth-sepolia.blockscout.com/");
+
           setUsedContractAddress(WORLDCHAIN_SEPOLIA_ROLLUP_CONTRACT);
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
             chain: worldchainSepolia,
-            transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
+            transport: http("https://worldchain-sepolia.g.alchemy.com/public/"),
           }).extend(publicActionsL2());
           l2PublicClient.getBalance({ address }).then((balance: any) => {
             console.log("Balance", balance);
@@ -134,12 +168,15 @@ function Page() {
           setL2PublicClient(l2PublicClient);
           await switchChain(config, { chainId: sepolia.id });
         } else if (chain.id === baseSepolia.id) {
+          setChainExplorer("https://base-sepolia.blockscout.com/");
+          setChainExplorerL1("https://eth-sepolia.blockscout.com/");
+
           setUsedContractAddress(BASE_SEPOLIA_ROLLUP_CONTRACT);
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
             chain: baseSepolia,
             transport: http(
-              "https://base-sepolia.blockpi.network/v1/rpc/public"
+              "https://base-sepolia.blockpi.network/v1/rpc/public/"
             ),
           }).extend(publicActionsL2());
           l2PublicClient.getBalance({ address }).then((balance: any) => {
@@ -149,6 +186,9 @@ function Page() {
           setL2PublicClient(l2PublicClient);
           await switchChain(config, { chainId: sepolia.id });
         } else if (chain.id === optimismSepolia.id) {
+          setChainExplorer("https://optimism-sepolia.blockscout.com/");
+          setChainExplorerL1("https://eth-sepolia.blockscout.com/");
+
           setUsedContractAddress(OPTIMISM_SEPOLIA_ROLLUP_CONTRACT);
           const l2PublicClient: ReturnType<typeof createPublicClient> &
             ReturnType<typeof publicActionsL2> = createPublicClient({
@@ -186,7 +226,9 @@ function Page() {
   );
 
   const { address } = useAccount();
-  const { writeContract, error } = useWriteContract();
+  const { writeContract, error, data, status } = useWriteContract();
+
+  console.log("tx info ", error, data, status);
 
   return (
     <main className="flex flex-col min-h-screen">
@@ -216,8 +258,7 @@ function Page() {
           <ul className="list-disc list-inside">
             <li>The sequencer is down or censoring your transaction.</li>
             <li>
-              You want to avoid potential MEV (Miner Extractable Value)
-              extraction by the sequencer.
+              You want to avoid potential MEV extraction by the sequencer.
             </li>
             <li>
               You need stronger guarantees about the inclusion of your
@@ -343,6 +384,19 @@ function Page() {
               >
                 From {selectedChain?.name} to L1
               </button>
+              <br />
+              {status !== "idle" && (
+                <>
+                  <p>Transaction Status: {status}</p>
+                  <a
+                    className="link"
+                    href={chainExplorerL1 + "tx/" + data}
+                    target="_blank"
+                  >
+                    Link to Blockscout
+                  </a>
+                </>
+              )}
             </div>
           </div>
           <br />
@@ -373,7 +427,13 @@ function Page() {
                     abi: portal,
                     address: usedContractAddress,
                     functionName: "depositTransaction",
-                    args: [contractAddr, ethValue, 910000n, false, ""],
+                    args: [
+                      contractAddr,
+                      parseUnits(ethValue?.toString(), 18),
+                      910000n,
+                      false,
+                      "",
+                    ],
                     gas: 1000000n,
                     maxPriorityFeePerGas: 100000000n,
                   });
@@ -381,6 +441,19 @@ function Page() {
               >
                 Send ETH to address on L2
               </button>
+              <br />
+              {status !== "idle" && (
+                <>
+                  <p>Transaction Status: {status}</p>
+                  <a
+                    className="link"
+                    href={chainExplorerL1 + "tx/" + data}
+                    target="_blank"
+                  >
+                    Link to Blockscout
+                  </a>
+                </>
+              )}
             </div>
           </div>
           <br />
