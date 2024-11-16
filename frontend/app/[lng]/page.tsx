@@ -236,7 +236,7 @@ function Page() {
         <div className="navbar bg-base-100">
           <div className="navbar-start">
             <div className="dropdown"></div>
-            <img src="/icons/logo.png" alt="Logo" width={120} height={40} />
+            <Image src="https://i.ibb.co/cTNfBK1/logo.png" alt="Logo" width={120} height={40} />
           </div>
           <div className="navbar-center hidden lg:flex"></div>
           <div className="navbar-end">

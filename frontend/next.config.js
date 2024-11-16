@@ -13,7 +13,7 @@ const nextConfig = {
 	trailingSlash: false,
 	images: {
 		formats: ["image/avif", "image/webp"],
-		domains: ['https://dyos.vercel.app', 'dyos.vercel.app']
+		domains: ['https://dyos.vercel.app', 'dyos.vercel.app', "https://i.ibb.co", "i.ibb.co"]
 	},
 	typescript: {
 		ignoreBuildErrors: true
