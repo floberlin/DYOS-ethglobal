@@ -2,10 +2,10 @@
 
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { createWalletClient, custom } from "viem";
+import { useState, useCallback } from "react";
 import {
   sepolia,
+  mainnet,
   baseSepolia,
   optimismSepolia,
   worldchainSepolia,
@@ -14,56 +14,179 @@ import {
   optimism,
   localhost,
 } from "viem/chains";
+import { useAccount, useWriteContract } from "wagmi";
+import { switchChain, disconnect } from "@wagmi/core";
+const {
+  publicActionsL2,
+  publicActionsL1,
+  walletActionsL2,
+  walletActionsL1,
+  getL2TransactionHashes,
+} = require("viem/op-stack");
 
+import { config } from "./providers";
+import portal from "@utils/abis/portal.json";
+import { createPublicClient, defineChain, formatUnits, http } from "viem";
+
+const local = /*#__PURE__*/ defineChain({
+  id: 3151908,
+  name: "Odyssey Local",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Ether",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: { http: ["http://127.0.0.1:54687"] },
+  },
+});
+
+// Sepolia Contracts
 const OPTIMISM_SEPOLIA_ROLLUP_CONTRACT =
   "0x16Fc5058F25648194471939df75CF27A2fdC48BC";
 
-const L1_BRIDGE_ABI = [
-  {
-    name: "withdrawETH",
-    type: "function",
-    inputs: [
-      { name: "amount", type: "uint256" }, // Amount of ETH to withdraw
-      { name: "minGasLimit", type: "uint32" }, // Minimum gas limit for L1 execution
-    ],
-  },
-];
+const BASE_SEPOLIA_ROLLUP_CONTRACT =
+  "0x49f53e41452C74589E85cA1677426Ba426459e85";
+
+const WORLDCHAIN_SEPOLIA_ROLLUP_CONTRACT =
+  "0xFf6EBa109271fe6d4237EeeD4bAb1dD9A77dD1A4";
+
+const ODYSSEY_SEPOLIA_ROLLUP_CONTRACT =
+  "0xAA1227dCd7CE7059Fa30d42641f7a7689b652b55";
+
+const OP_STACK_CROSSCHAIN_CONTRACT =
+  "0x4200000000000000000000000000000000000007";
 
 function Page() {
   const { connectWallet } = usePrivy();
-
   const { wallets } = useWallets();
   const wallet = wallets[0];
+  const [selectedChain, setSelectedChain] = useState(null);
+  const [usedContractAddress, setUsedContractAddress] = useState(
+    OPTIMISM_SEPOLIA_ROLLUP_CONTRACT
+  );
+  const [l2PublicClient, setL2PublicClient] = useState(null);
+  const [l2Balance, setL2Balance] = useState(null);
 
-  const [walletClient, setWalletClient] = useState();
-  const [selectedChain, setSelectedChain] = useState();
+  const [contractAddr, setContractAddr] = useState();
+  const [calldata, setCalldata] = useState();
+  const [sendTo, setSendTo] = useState();
+  const [ethValue, setEthValue] = useState();
 
-  const handleChainSelection = async (chain: any) => {
-    setSelectedChain(chain);
-    // add chain to wallet if not already added
-    await wallet.switchChain(chain.id);
-  };
+  const handleChainSelection = useCallback(
+    async (chain: any) => {
+      if (!wallet || !chain) return;
 
-  useEffect(() => {
-    console.log("wallet", wallet);
-    if (!wallet || !selectedChain) {
-      return;
-    }
+      try {
+        console.log("Switching chain:", chain.id);
+        setSelectedChain(chain);
 
-    const initializeWallet = async () => {
-      await wallet.switchChain(selectedChain.id);
-      const provider = await wallet.getEthereumProvider();
-      const walletClient = createWalletClient({
-        chain: selectedChain,
-        transport: custom(provider),
-      });
-      // await walletClient.addChain(selectedChain);
-      setWalletClient(walletClient);
-    };
+        if (chain.id === worldchain.id) {
+          setUsedContractAddress(WORLD_MAINNET_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: worldchain,
+            transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: mainnet.id });
+        } else if (chain.id === base.id) {
+          setUsedContractAddress(BASE_MAINNET_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: base,
+            transport: http("https://base.llamarpc.com"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: mainnet.id });
+        } else if (chain.id === optimism.id) {
+          setUsedContractAddress(OPTIMISM_MAINNET_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: optimismSepolia,
+            transport: http("https://sepolia.optimism.io"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: mainnet.id });
+        } else if (chain.id === worldchainSepolia.id) {
+          setUsedContractAddress(WORLDCHAIN_SEPOLIA_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: worldchainSepolia,
+            transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: sepolia.id });
+        } else if (chain.id === baseSepolia.id) {
+          setUsedContractAddress(BASE_SEPOLIA_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: baseSepolia,
+            transport: http(
+              "https://base-sepolia.blockpi.network/v1/rpc/public"
+            ),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: sepolia.id });
+        } else if (chain.id === optimismSepolia.id) {
+          setUsedContractAddress(OPTIMISM_SEPOLIA_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: optimismSepolia,
+            transport: http("https://sepolia.optimism.io"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
 
-    initializeWallet();
-    console.log("walletClient", walletClient);
-  }, [wallet, selectedChain]);
+          await switchChain(config, { chainId: sepolia.id });
+        } else if (chain.id === local.id) {
+          setUsedContractAddress(ODYSSEY_SEPOLIA_ROLLUP_CONTRACT);
+          const l2PublicClient: ReturnType<typeof createPublicClient> &
+            ReturnType<typeof publicActionsL2> = createPublicClient({
+            chain: local,
+            transport: http("http://localhost:54687"),
+          }).extend(publicActionsL2());
+          l2PublicClient.getBalance({ address }).then((balance: any) => {
+            console.log("Balance", balance);
+            setL2Balance(formatUnits(balance, 18));
+          });
+          setL2PublicClient(l2PublicClient);
+          await switchChain(config, { chainId: mainnet.id });
+        } else if (chain.id === local.id) {
+          await switchChain(config, { chainId: local.id });
+        }
+      } catch (error) {
+        console.error("Error switching chain:", error);
+      }
+    },
+    [wallet]
+  );
+
+  const { address } = useAccount();
+  const { writeContract, error } = useWriteContract();
 
   return (
     <main className="flex flex-col min-h-screen">
@@ -71,23 +194,25 @@ function Page() {
         <div className="navbar bg-base-100">
           <div className="navbar-start">
             <div className="dropdown"></div>
-            <img src="/icons/logo.png" alt="Logo" width={120} height={40} />
+            <Image src="/icons/logo.png" alt="Logo" width={120} height={40} />
           </div>
           <div className="navbar-center hidden lg:flex"></div>
           <div className="navbar-end">
-            <button className="btn" onClick={connectWallet}>
-              {wallet?.address
-                ? wallet?.address.slice(0, 4) +
-                  "..." +
-                  wallet?.address.slice(-3)
-                : "Connect Wallet"}
-            </button>
+            {address ? (
+              <button className="btn" onClick={() => disconnect(config)}>
+                {address?.slice(0, 4)}...{address?.slice(-3)}
+              </button>
+            ) : (
+              <button className="btn" onClick={connectWallet}>
+                Connect Wallet
+              </button>
+            )}
           </div>
         </div>
         {/* Main content */}
         <div className="container mx-auto p-4">
           <h2 className="text-2xl font-bold mb-4">Why Self-Sequence?</h2>
-          <p>Self-sequencing may be necessary if:</p>
+          <p>Self-Sequencing may be necessary if:</p>
           <ul className="list-disc list-inside">
             <li>The sequencer is down or censoring your transaction.</li>
             <li>
@@ -110,82 +235,203 @@ function Page() {
 
             <h3 className="text-xl font-bold mb-2">Testnet:</h3>
             <button
-              className="btn btn-primary mr-2"
-              onClick={() => handleChainSelection("worldchainSepolia")}
+              className={`btn mr-2 ${
+                selectedChain === worldchainSepolia
+                  ? "btn-primary"
+                  : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(worldchainSepolia)}
             >
               World Sepolia
             </button>
             <button
-              className="btn btn-primary mr-2"
-              onClick={() => handleChainSelection("baseSepolia")}
+              className={`btn mr-2 ${
+                selectedChain === baseSepolia ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(baseSepolia)}
             >
               Base Sepolia
             </button>
             <button
-              className="btn btn-primary mr-2"
-              onClick={() => handleChainSelection("optimismSepolia")}
+              className={`btn mr-2 ${
+                selectedChain === optimismSepolia
+                  ? "btn-primary"
+                  : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(optimismSepolia)}
             >
               Optimism Sepolia
             </button>
             <button
-              className="btn btn-primary"
-              onClick={() => handleChainSelection("localhost")}
+              className={`btn mr-2 ${
+                selectedChain === localhost ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(localhost)}
             >
-              Localhost
+              Localhost (1337)
+            </button>
+            <button
+              className={`btn ${
+                selectedChain === localhost ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(local)}
+            >
+              Localhost (Alphanet 11155111)
             </button>
           </div>
           <div className="text-left mt-4">
             <h3 className="text-xl font-bold mb-2">Mainnet:</h3>
             <button
-              className="btn btn-primary mr-2"
-              onClick={() => handleChainSelection("worldchain")}
+              className={`btn mr-2 ${
+                selectedChain === worldchain ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(worldchain)}
             >
               World
             </button>
             <button
-              className="btn btn-primary mr-2"
-              onClick={() => handleChainSelection("base")}
+              className={`btn mr-2 ${
+                selectedChain === base ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(base)}
             >
               Base
             </button>
             <button
-              className="btn btn-primary"
-              onClick={() => handleChainSelection("optimism")}
+              className={`btn ${
+                selectedChain === optimism ? "btn-primary" : "btn-secondary"
+              }`}
+              onClick={() => handleChainSelection(optimism)}
             >
               Optimism
             </button>
           </div>
           <br />
-          <p>Connected Chain: {selectedChain?.name}</p>
-          <div
-            tabIndex={0}
-            className="collapse collapse-arrow border-base-300 bg-base-200 border"
-          >
+          {selectedChain && (
+            <p>
+              Choosen Chain: {selectedChain?.name} | ETH Balance on L2:{" "}
+              {l2Balance} ETH
+            </p>
+          )}
+        </div>
+
+        <div className="m-4">
+          <div className="collapse collapse-plus bg-base-200 border ">
+            <input type="radio" name="my-accordion-3" defaultChecked />
             <div className="collapse-title text-xl font-medium">
-              Focus me to see content
+              Withdraw ETH
             </div>
             <div className="collapse-content">
-              <p>
-                tabindex={0} attribute is necessary to make the div focusable
-              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  writeContract({
+                    abi: portal,
+                    address: usedContractAddress,
+                    functionName: "depositTransaction",
+                    args: [
+                      "0x131cf758d9ef6bca88928442dc715c8fdc113952",
+                      "1000000302000000100",
+                      910000n,
+                      false,
+                      "",
+                    ],
+                    gas: 1000000n,
+                    maxPriorityFeePerGas: 100000000n,
+                  });
+                }}
+              >
+                From {selectedChain?.name} to L1
+              </button>
             </div>
           </div>
-          <div
-            tabIndex={0}
-            className="collapse collapse-arrow border-base-300 bg-base-200 border"
-          >
+          <br />
+          <div className="collapse collapse-plus bg-base-200">
+            <input type="radio" name="my-accordion-3" />
             <div className="collapse-title text-xl font-medium">
-              Focus me to see content
+              More options
             </div>
             <div className="collapse-content">
-              <p>
-                tabindex={0} attribute is necessary to make the div focusable
-              </p>
+              <input
+                type="text"
+                placeholder="Recipient Address"
+                className="input input-bordered w-full max-w-xs"
+                value={contractAddr}
+                onChange={(e: any) => setContractAddr(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Amount of ETH"
+                className="input input-bordered w-full max-w-xs"
+                value={ethValue}
+                onChange={(e: any) => setEthValue(e.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  writeContract({
+                    abi: portal,
+                    address: usedContractAddress,
+                    functionName: "depositTransaction",
+                    args: [contractAddr, ethValue, 910000n, false, ""],
+                    gas: 1000000n,
+                    maxPriorityFeePerGas: 100000000n,
+                  });
+                }}
+              >
+                Send ETH to address on L2
+              </button>
+            </div>
+          </div>
+          <br />
+          <div className="collapse collapse-plus bg-base-200">
+            <input type="radio" name="my-accordion-3" />
+            <div className="collapse-title text-xl font-medium">
+              Submit own bytecode (advanced)
+            </div>
+            <div className="collapse-content">
+              <input
+                type="text"
+                placeholder="Smart Contract Address"
+                className="input input-bordered w-full max-w-xs"
+                value={contractAddr}
+                onChange={(e: any) => setContractAddr(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Calldata"
+                className="input input-bordered w-full max-w-xs"
+                value={calldata}
+                onChange={(e: any) => setCalldata(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Ether Value field (can be 0)"
+                className="input input-bordered w-full max-w-xs"
+                value={ethValue}
+                onChange={(e: any) => setEthValue(e.target.value)}
+              />
+              <br />
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  writeContract({
+                    abi: portal,
+                    address: usedContractAddress,
+                    functionName: "depositTransaction",
+                    args: [contractAddr, ethValue, 910000n, false, calldata],
+                    gas: 1000000n,
+                    maxPriorityFeePerGas: 100000000n,
+                  });
+                }}
+              >
+                Call any L2 contract
+              </button>
             </div>
           </div>
         </div>
       </div>
-      <footer className="footer bg-neutral text-neutral-content items-center p-4">
+      <footer className="footer bg-neutral text-neutral-content items-center p-4 mt-auto">
         <aside className="grid-flow-col items-center">
           <p>Made with ❤️ at ETHGlobal Bangkok 2024</p>
         </aside>
@@ -202,7 +448,7 @@ function Page() {
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d="M12 0C5.373 0 0 5.373 0 12c0 5.303 3.438 9.8 8.205 11.387.6.11.82-.26.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.757-1.333-1.757-1.09-.745.083-.73.083-.73 1.205.085 1.84 1.237 1.84 1.237 1.07 1.835 2.807 1.305 3.492.998.108-.775.418-1.305.76-1.605-2.665-.305-5.466-1.335-5.466-5.93 0-1.31.467-2.38 1.235-3.22-.125-.305-.535-1.54.115-3.205 0 0 1.005-.322 3.3 1.23.955-.265 1.98-.398 3-.403 1.02.005 2.045.138 3 .403 2.28-1.552 3.285-1.23 3.285-1.23.655 1.665.245 2.9.12 3.205.77.84 1.235 1.91 1.235 3.22 0 4.61-2.805 5.62-5.475 5.92.43.37.81 1.1.81 2.22 0 1.605-.015 2.895-.015 3.285 0 .32.215.695.825.575C20.565 21.795 24 17.3 24 12c0-6.627-5.373-12-12-12z"
-                fill="#FFFFFF"
+                fill="#181717"
               />
             </svg>
           </a>
